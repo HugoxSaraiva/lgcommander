@@ -15,9 +15,7 @@ from tkinter import *
 
 lgtv = {}
 dialogMsg = ""
-headers = {"Content-Type": "application/atom+xml"}
 lgtv["pairingKey"] = "DDGWAF"
-
 
 class MyDialog:
 
@@ -53,6 +51,7 @@ class LgRemote:
         self._protocol = protocol
         self._session_id = None
         self._xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
+        self._headers = {"Content-Type": "application/atom+xml"}
 
     def getip(self):
         strngtoXmit =   'M-SEARCH * HTTP/1.1' + '\r\n' + \
@@ -181,6 +180,11 @@ def main():  # {{{
         '--pairing-key',
         help="Pairing key of your TV. This key is shown on request on the screen and does only change if you factory reset your TV."
     )
+    args.add_argument(
+        '-c',
+        '--command',
+        help="Send just a single command and exit."
+    )
     user_parms = args.parse_args()
 
     logging.basicConfig(
@@ -219,6 +223,9 @@ def main():  # {{{
     dialogMsg += "Warning: do not enter 254 if you \n"
     dialogMsg += "do not know what POWER_ONLY mode is. "
 
+    if user_parms.command:
+        lg_remote.handleCommand(user_parms.command)
+        sys.exit(0)
 
     result = "26"
     while int(result) <= 255:

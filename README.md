@@ -15,11 +15,11 @@ A PC, with python 3.x installed, connected to the same network as your Lg TV.
 * for Installation menu enter 207
 * for POWER_ONLY mode enter 254
 
-Warning: do not enter 254 if you do not know what POWER_ONLY mode is. You can find additional information about menus and modes here: <http://openlgtv.org.ru>   
- 
+Warning: do not enter 254 if you do not know what POWER_ONLY mode is. You can find additional information about menus and modes here: <http://openlgtv.org.ru>
+
 As long as you do not "factory reset" your TV, pairing key doesn't change. You can use an editor to modify the line:
 
-    lgtv["pairingKey"] = "DDGWAF"    
+    lgtv["pairingKey"] = "DDGWAF"
 
 to suit your TV's actual pairing key.  This will eliminate the pairing key acquisition stage.
 
@@ -34,10 +34,10 @@ If you upgrade your TV firmware to 05.12.05 or later, "Tool Option 3" may be gre
 You can avoid the black console window if you change the "py" file extension to "pyw".
 
 ## Newer LG Smart TV (year 2012) models:
-#### Benke Tamás says: 
+#### Benke Tamás says:
 "I wanted to use your lgcommander script, but i realized that its not working with lg 2012 smart tv series. I made some changes, now its working with the new series, but lg changed the keycodes too. Now, there are keycodes above 255 and ez-adjust, in-start code changed too, but i dont know them yet. I attached my version, if you want to improve yours."
 
-#### I added Benke's version of the script as lg_2012_commander.py 
+#### I added Benke's version of the script as lg_2012_commander.py
 
 #### Ajay Ramaswamy says:
 quote:
@@ -48,7 +48,7 @@ Thanks for your lgcommander script. I was playing around with my 2012 55LM6200
 TV and LG has provided a Android App Smart TV which provides a remote control
 app.
 
-I ran that app thru unzip, dex2class and JD-GUI and found the file 
+I ran that app thru unzip, dex2class and JD-GUI and found the file
 com/lge/tv/remoteapps/Base/RemoteKeyIndex.class contains these key mappings
 
 
@@ -102,5 +102,5 @@ unquote
 *   <http://openlgtv.org.ru>
 
 
-*   An application written in ruby where you can find a comprehensive list of command codes:    
+*   An application written in ruby where you can find a comprehensive list of command codes:
 <https://github.com/dreamcat4/lgremote>

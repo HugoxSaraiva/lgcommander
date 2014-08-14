@@ -7,7 +7,6 @@
 __version__ = '0.4'
 
 import re
-import sys
 import logging
 import socket
 
@@ -35,24 +34,36 @@ class MyDialog:
         self.user_string = self.e.get()
         self.top.destroy()
 
+class KeyInputError(Exception):
+    pass
+
 class LgRemote:
 
     def __init__(
             self,
-            ip_address,
+            ip_address=None,
             port=8080,
             protocol='hdcp'
     ):
 
-        self.ip_address = ip_address
         self.port = port
+        self.ip_address = ip_address
+        if not ip_address:
+            self.getip()
         self._protocol = protocol
         self._pairing_key = None
         self._session_id = None
+
         self._xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
         self._headers = {"Content-Type": "application/atom+xml"}
+        self._highest_key_input_for_protocol = {
+            'hdcp': 255,
+            'roap': 1024,
+        }
 
     def getip(self):
+        if self.ip_address:
+            return self.ip_address
         strngtoXmit = 'M-SEARCH * HTTP/1.1' + '\r\n' + \
             'HOST: 239.255.255.250:1900' + '\r\n' + \
             'MAN: "ssdp:discover"' + '\r\n' + \
@@ -66,7 +77,6 @@ class LgRemote:
         found = False
         gotstr = 'notyet'
         i = 0
-        ipaddress = None
         sock.sendto(bytestoXmit, ('239.255.255.250', 1900))
         while not found and i <= 5 and gotstr == 'notyet':
             try:
@@ -76,25 +86,29 @@ class LgRemote:
                 i += 1
                 sock.sendto(bytestoXmit, ('239.255.255.250', 1900))
             if re.search('LG', gotstr):
-                ipaddress, _ = addressport
+                logging.debug("Found device: %s", addressport)
+                self.ip_address, _ = addressport
                 found = True
             else:
                 gotstr = 'notyet'
             i += 1
         sock.close()
         if not found:
-            sys.exit("Lg TV not found")
-        return ipaddress
+            raise socket.error("Lg TV not found.")
+        logging.info("Using device: %s", self.ip_address)
+        return self.ip_address
 
     def display_key_on_screen(self):
         conn = http.client.HTTPConnection(self.ip_address, port=self.port)
         req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
+        logging.debug("Request device to show key on screen.")
         conn.request(
             "POST",
             "/{}/api/auth".format(self._protocol),
             req_key_xml_string,
             headers=self._headers)
         http_response = conn.getresponse()
+        logging.debug("Device response was: %s", http_response.reason)
         if http_response.reason != "OK":
             raise Exception("Network error: {}".format(http_response.reason))
         return http_response.reason
@@ -125,6 +139,15 @@ class LgRemote:
         return self._session_id
 
     def handle_key_input(self, cmdcode):
+        highest_key_input = self._highest_key_input_for_protocol[self._protocol]
+        try:
+            if 0 > int(cmdcode) or int(cmdcode) > highest_key_input:
+                raise KeyInputError('Key input {} is not supported.'.format(cmdcode))
+        except ValueError:
+            raise KeyInputError('Key input {} is not a number'.format(cmdcode))
+        if not self._session_id:
+            raise Exception("No valid session key available.")
+
         command_url_for_protocol = {
             'hdcp': '/{}/api/dtv_wifirc'.format(self._protocol),
             'roap': '/{}/api/command'.format(self._protocol),
@@ -170,7 +193,8 @@ def main():  # {{{
     )
     args.add_argument(
         'ip_address',
-        help=u"raw test file file",
+        help=u"IP address or FQDN of device."
+        + " Use the special value \"scan\" for a mulicast request for TVs in your LAN."
     )
     args.add_argument(
         '-p',
@@ -205,7 +229,13 @@ def main():  # {{{
         # level=logging.INFO,
     )
 
-    lg_remote = LgRemote(user_parms.ip_address, protocol=user_parms.protocol)
+    logging.debug(None if user_parms.ip_address == 'scan' else user_parms.ip_address)
+    try:
+        lg_remote = LgRemote(
+            ip_address=None if user_parms.ip_address == 'scan' else user_parms.ip_address,
+            protocol=user_parms.protocol)
+    except socket.error as error:
+        raise SystemExit(error)
 
     if user_parms.pairing_key:
         logging.debug("Pairing key from user %s", user_parms.pairing_key)
@@ -230,15 +260,18 @@ def main():  # {{{
 
     if user_parms.command:
         lg_remote.handle_key_input(user_parms.command)
-        sys.exit(0)
+        raise SystemExit()
 
-    result = "26"
-    while int(result) <= 255:
+    while True:
         root = Tk()
         root.withdraw()
         dialog = MyDialog(root, dialog_msg)
         root.wait_window(dialog.top)
-        lg_remote.handle_key_input(dialog.user_string)
+        try:
+            lg_remote.handle_key_input(dialog.user_string)
+        except KeyInputError:
+            logging.debug("Terminate on user requested.")
+            break
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

@@ -196,7 +196,7 @@ def main():  # {{{
         '--host',
         default='scan',
         help=u"IP address or FQDN of device."
-        + " Use the special value \"scan\" for a mulicast request for TVs in your LAN."
+        + " Use the special value \"scan\" for a multicast request for TVs in your LAN."
         + " \"scan\" will also be used if this parameter was omitted."
     )
     args.add_argument(
@@ -210,7 +210,7 @@ def main():  # {{{
         choices=['roap', 'hdcp'],
         default='hdcp',
         help="Protocol to use."
-        + " Currently ROSP and HDCP are supported. Default is HDCP.",
+        + " Currently ROAP and HDCP are supported. Default is HDCP.",
     )
     args.add_argument(
         '-k',

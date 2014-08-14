@@ -59,10 +59,10 @@ You can avoid the black console window if you change the "py" file extension to 
 ## Newer LG Smart TV (year 2012) models:
 
 ### Benke Tamás:
-> I wanted to use your lgcommander script, but i realized that its not working with lg 2012 smart tv series. I made some changes, now its working with the new series, but lg changed the keycodes too. Now, there are keycodes above 255 and ez-adjust, in-start code changed too, but i dont know them yet. I attached my version, if you want to improve yours.
+> I wanted to use your lgcommander script, but I realized that its not working with lg 2012 smart tv series. I made some changes, now its working with the new series, but lg changed the keycodes too. Now, there are keycodes above 255 and ez-adjust, in-start code changed too, but I dont know them yet. I attached my version, if you want to improve yours.
 
 * Benke's version of the script was added as lg_2012_commander.py.
-* [ypid](https://github.com/ypid) combined the script into lgcommander.py.
+* [ypid](https://github.com/ypid) combined the script into lgcommander.py (use `./lgcommander.py -P roap`).
 
 ### Ajay Ramaswamy:
 > Hi,
@@ -114,8 +114,6 @@ You can avoid the black console window if you change the "py" file extension to 
 > Thanks & best regards
 >
 > Ajay
-
-unquote
 
 ## This software was developed with inspiration and/or information taken from:
 

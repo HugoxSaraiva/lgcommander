@@ -50,7 +50,7 @@ class LgRemote:
             self,
             host=None,
             port=8080,
-            protocol='hdcp'
+            protocol=None
     ):
 
         self.port = port
@@ -58,6 +58,8 @@ class LgRemote:
         if not self.host:
             self.getip()
         self._protocol = protocol
+        if not self._protocol:
+            self.auto_detect_accepted_protocol()
         self._pairing_key = None
         self._session_id = None
 
@@ -97,6 +99,25 @@ class LgRemote:
             raise socket.error("Lg TV not found.")
         logging.info("Using device: %s", self.host)
         return self.host
+
+    def auto_detect_accepted_protocol(self):
+        req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
+        logging.debug("Detecting accepted protocol.")
+        for protocol in self._highest_key_input_for_protocol:
+            logging.debug("Testing protocol: %s", protocol)
+            conn = http.client.HTTPConnection(self.host, port=self.port)
+            conn.request(
+                "POST",
+                "/{}/api/auth".format(protocol),
+                req_key_xml_string,
+                headers=self._headers)
+            http_response = conn.getresponse()
+            logging.debug("Got response: %s", http_response.reason)
+            if http_response.reason == 'OK':
+                self._protocol = protocol
+                logging.debug("Using protocol: %s", self._protocol)
+                return self._protocol
+        raise Exception("No accepted protocol found.")
 
     def display_key_on_screen(self):
         conn = http.client.HTTPConnection(self.host, port=self.port)
@@ -202,15 +223,17 @@ def main():  # {{{
     args.add_argument(
         '-p',
         '--port',
+        default='8080',
         help=u"TCP port (default is 8080)."
     )
     args.add_argument(
         '-P',
         '--protocol',
         choices=['roap', 'hdcp'],
-        default='hdcp',
+        default=None,
         help="Protocol to use."
-        + " Currently ROAP and HDCP are supported. Default is HDCP.",
+        + " Currently ROAP and HDCP are supported."
+        + " Default is to auto detect the correct one.",
     )
     args.add_argument(
         '-k',
@@ -232,10 +255,10 @@ def main():  # {{{
         # level=logging.INFO,
     )
 
-    logging.debug(None if user_parms.host == 'scan' else user_parms.host)
     try:
         lg_remote = LgRemote(
             host=None if user_parms.host == 'scan' else user_parms.host,
+            port=user_parms.port,
             protocol=user_parms.protocol)
     except socket.error as error:
         raise SystemExit(error)

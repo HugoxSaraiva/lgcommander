@@ -27,7 +27,7 @@ See the available options with: `./lgcommander.py --help` or `python3 lgcommande
       -p PORT, --port PORT  TCP port (default is 8080).
       -P {roap,hdcp}, --protocol {roap,hdcp}
                             Protocol to use. Currently ROAP and HDCP are
-                            supported. Default is HDCP.
+                            supported. Default is to auto detect the correct one.
       -k PAIRING_KEY, --pairing-key PAIRING_KEY
                             Pairing key of your TV. This key is shown on request
                             on the screen and does only change if you factory

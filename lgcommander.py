@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# encoding: utf-8
+
 # Todo:
 # Use the same TCP connection.
 
@@ -13,15 +15,13 @@ import xml.etree.ElementTree as etree
 import http.client
 from tkinter import *
 
-lgtv = {}
-dialogMsg = ""
-lgtv["pairingKey"] = "DDGWAF"
-
 class MyDialog:
 
-    def __init__(self, parent, dialogMsg):
+    def __init__(self, parent, dialog_msg):
+        self.user_string = None
+
         top = self.top = Toplevel(parent)
-        Label(top, text=dialogMsg, justify="left").pack()
+        Label(top, text=dialog_msg, justify="left").pack()
         self.e = Entry(top)
         self.e.pack(padx=5)
         self.e.focus_set()
@@ -32,10 +32,8 @@ class MyDialog:
         top.geometry("410x280+10+10")
 
     def ok(self, dummy=None):
-        global result
-        result = self.e.get()
+        self.user_string = self.e.get()
         self.top.destroy()
-
 
 class LgRemote:
 
@@ -49,6 +47,7 @@ class LgRemote:
         self.ip_address = ip_address
         self.port = port
         self._protocol = protocol
+        self._pairing_key = None
         self._session_id = None
         self._xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
         self._headers = {"Content-Type": "application/atom+xml"}
@@ -87,9 +86,9 @@ class LgRemote:
             sys.exit("Lg TV not found")
         return ipaddress
 
-    def displayKey(self):
+    def display_key_on_screen(self):
         conn = http.client.HTTPConnection(self.ip_address, port=self.port)
-        req_key_xml_string = self._xml_version_string + 'auth><type>AuthKeyReq</type></auth>'
+        req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
         conn.request(
             "POST",
             "/{}/api/auth".format(self._protocol),
@@ -101,9 +100,14 @@ class LgRemote:
         return http_response.reason
 
     def get_session_id(self, paring_key):
+        if not paring_key:
+            return None
+
+        self._pairing_key = paring_key
+        logging.debug('Trying paring key: %s', self._pairing_key)
         pair_cmd_xml_string = self._xml_version_string \
             + '<auth><type>AuthReq</type><value>' \
-            + paring_key + "</value></auth>"
+            + self._pairing_key + "</value></auth>"
         conn = http.client.HTTPConnection(self.ip_address, port=self.port)
         conn.request(
             'POST',
@@ -116,13 +120,17 @@ class LgRemote:
         tree = etree.XML(http_response.read())
         self._session_id = tree.find('session').text
         logging.debug('Session ID is %s', self._session_id)
+        if len(self._session_id) < 8:
+            raise Exception("Could not get Session Id: " + self._session_id)
         return self._session_id
 
-    def handleCommand(self, cmdcode):
+    def handle_key_input(self, cmdcode):
         command_url_for_protocol = {
             'hdcp': '/{}/api/dtv_wifirc'.format(self._protocol),
             'roap': '/{}/api/command'.format(self._protocol),
         }
+
+        logging.debug('Executing command: %s', cmdcode)
         key_input_xml_string = self._xml_version_string + '<command><session>' \
             + self._session_id \
             + "</session><type>HandleKeyInput</type><value>" \
@@ -136,18 +144,20 @@ class LgRemote:
             headers=self._headers)
         return conn.getresponse()
 
-def getPairingKey(lg_remote):
-    lg_remote.displayKey()
-    root = Tk()
-    root.withdraw()
-    dialogMsg = "Please enter the pairing key\nyou see on your TV screen\n"
-    d = MyDialog(root, dialogMsg)
-    root.wait_window(d.top)
-    d.top.destroy()
-    return result
-
 def main():  # {{{
     """Execute module in command line mode."""
+
+    def get_pairing_key_from_user(lg_remote):
+        lg_remote.display_key_on_screen()
+        root = Tk()
+        root.withdraw()
+        dialog_msg = "Please enter the pairing key\nyou see on your TV screen\n"
+        dialog = MyDialog(root, dialog_msg)
+        root.wait_window(dialog.top)
+        session_id = dialog.user_string
+        dialog.top.destroy()
+        return session_id
+
 
     args = ArgumentParser(
         description="Control your Smart Lg TV with your PC",
@@ -178,7 +188,9 @@ def main():  # {{{
     args.add_argument(
         '-k',
         '--pairing-key',
-        help="Pairing key of your TV. This key is shown on request on the screen and does only change if you factory reset your TV."
+        help="Pairing key of your TV."
+        + "This key is shown on request on the screen"
+        + " and does only change if you factory reset your TV."
     )
     args.add_argument(
         '-c',
@@ -195,44 +207,38 @@ def main():  # {{{
 
     lg_remote = LgRemote(user_parms.ip_address, protocol=user_parms.protocol)
 
-    theSessionid = None
     if user_parms.pairing_key:
-        logging.debug('Pairing key from user %s', user_parms.pairing_key)
-        theSessionid = lg_remote.get_session_id(user_parms.pairing_key)
-    while theSessionid is None:
-        theSessionid = lg_remote.get_session_id(getPairingKey(lg_remote))
+        logging.debug("Pairing key from user %s", user_parms.pairing_key)
+        lg_remote.get_session_id(user_parms.pairing_key)
+    while not lg_remote._session_id:
+        logging.debug("No valid pairing key from user. Asking user …")
+        lg_remote.get_session_id(get_pairing_key_from_user(lg_remote))
 
-    if len(theSessionid) < 8:
-        sys.exit("Could not get Session Id: " + theSessionid)
-
-    lgtv["session"] = theSessionid
-    dialogMsg = ""
-    for lgkey in lgtv:
-        dialogMsg += lgkey + ": " + lgtv[lgkey] + "\n"
-
-    dialogMsg += "Success in establishing command session\n"
-    dialogMsg += "=" * 28 + "\n"
-    dialogMsg += "Enter command code i.e. a number between 0 and 255\n"
-    dialogMsg += "Enter a number greater than 255 to quit.\n"
-    dialogMsg += "Some useful codes:\n"
-    dialogMsg += "for EZ_ADJUST     menu enter   255 \n"
-    dialogMsg += "for IN START        menu enter   251 \n"
-    dialogMsg += "for Installation     menu enter   207 \n"
-    dialogMsg += "for POWER_ONLY mode enter   254 \n"
-    dialogMsg += "Warning: do not enter 254 if you \n"
-    dialogMsg += "do not know what POWER_ONLY mode is. "
+    dialog_msg = "Session ID: " + str(lg_remote._session_id) + "\n"
+    dialog_msg += "Paring key: " + str(lg_remote._pairing_key) + "\n"
+    dialog_msg += "Success in establishing command session\n"
+    dialog_msg += "=" * 28 + "\n"
+    dialog_msg += "Enter command code i.e. a number between 0 and 255\n"
+    dialog_msg += "Enter a number greater than 255 to quit.\n"
+    dialog_msg += "Some useful codes:\n"
+    dialog_msg += "for EZ_ADJUST     menu enter   255 \n"
+    dialog_msg += "for IN START        menu enter   251 \n"
+    dialog_msg += "for Installation     menu enter   207 \n"
+    dialog_msg += "for POWER_ONLY mode enter   254 \n"
+    dialog_msg += "Warning: do not enter 254 if you \n"
+    dialog_msg += "do not know what POWER_ONLY mode is. "
 
     if user_parms.command:
-        lg_remote.handleCommand(user_parms.command)
+        lg_remote.handle_key_input(user_parms.command)
         sys.exit(0)
 
     result = "26"
     while int(result) <= 255:
         root = Tk()
         root.withdraw()
-        d = MyDialog(root, dialogMsg)
-        root.wait_window(d.top)
-        lg_remote.handleCommand(result)
+        dialog = MyDialog(root, dialog_msg)
+        root.wait_window(dialog.top)
+        lg_remote.handle_key_input(dialog.user_string)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

@@ -39,6 +39,13 @@ class KeyInputError(Exception):
 
 class LgRemote:
 
+    _xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
+    _headers = {"Content-Type": "application/atom+xml"}
+    _highest_key_input_for_protocol = {
+        'hdcp': 255,
+        'roap': 1024,
+    }
+
     def __init__(
             self,
             ip_address=None,
@@ -53,13 +60,6 @@ class LgRemote:
         self._protocol = protocol
         self._pairing_key = None
         self._session_id = None
-
-        self._xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
-        self._headers = {"Content-Type": "application/atom+xml"}
-        self._highest_key_input_for_protocol = {
-            'hdcp': 255,
-            'roap': 1024,
-        }
 
     def getip(self):
         if self.ip_address:

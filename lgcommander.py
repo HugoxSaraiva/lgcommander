@@ -197,11 +197,12 @@ def main():  # {{{
         default='scan',
         help=u"IP address or FQDN of device."
         + " Use the special value \"scan\" for a mulicast request for TVs in your LAN."
+        + " \"scan\" will also be used if this parameter was omitted."
     )
     args.add_argument(
         '-p',
         '--port',
-        help=u"TCP port (default is 8080)"
+        help=u"TCP port (default is 8080)."
     )
     args.add_argument(
         '-P',
@@ -215,7 +216,7 @@ def main():  # {{{
         '-k',
         '--pairing-key',
         help="Pairing key of your TV."
-        + "This key is shown on request on the screen"
+        + " This key is shown on request on the screen"
         + " and does only change if you factory reset your TV."
     )
     args.add_argument(

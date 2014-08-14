@@ -22,14 +22,16 @@ See the available options with: `./lgcommander.py --help` or `python3 lgcommande
       -V, --version         show program's version number and exit
       -H HOST, --host HOST  IP address or FQDN of device. Use the special value
                             "scan" for a mulicast request for TVs in your LAN.
-      -p PORT, --port PORT  TCP port (default is 8080)
+                            "scan" will also be used if this parameter was
+                            omitted.
+      -p PORT, --port PORT  TCP port (default is 8080).
       -P {roap,hdcp}, --protocol {roap,hdcp}
                             Protocol to use. Currently ROSP and HDCP are
                             supported. Default is HDCP.
       -k PAIRING_KEY, --pairing-key PAIRING_KEY
-                            Pairing key of your TV.This key is shown on request on
-                            the screen and does only change if you factory reset
-                            your TV.
+                            Pairing key of your TV. This key is shown on request
+                            on the screen and does only change if you factory
+                            reset your TV.
       -c COMMAND, --command COMMAND
                             Send just a single command and exit.
 

@@ -48,22 +48,22 @@ class LgRemote:
 
     def __init__(
             self,
-            ip_address=None,
+            host=None,
             port=8080,
             protocol='hdcp'
     ):
 
         self.port = port
-        self.ip_address = ip_address
-        if not ip_address:
+        self.host = host
+        if not self.host:
             self.getip()
         self._protocol = protocol
         self._pairing_key = None
         self._session_id = None
 
     def getip(self):
-        if self.ip_address:
-            return self.ip_address
+        if self.host:
+            return self.host
         strngtoXmit = 'M-SEARCH * HTTP/1.1' + '\r\n' + \
             'HOST: 239.255.255.250:1900' + '\r\n' + \
             'MAN: "ssdp:discover"' + '\r\n' + \
@@ -87,7 +87,7 @@ class LgRemote:
                 sock.sendto(bytestoXmit, ('239.255.255.250', 1900))
             if re.search('LG', gotstr):
                 logging.debug("Found device: %s", addressport)
-                self.ip_address, _ = addressport
+                self.host, _ = addressport
                 found = True
             else:
                 gotstr = 'notyet'
@@ -95,11 +95,11 @@ class LgRemote:
         sock.close()
         if not found:
             raise socket.error("Lg TV not found.")
-        logging.info("Using device: %s", self.ip_address)
-        return self.ip_address
+        logging.info("Using device: %s", self.host)
+        return self.host
 
     def display_key_on_screen(self):
-        conn = http.client.HTTPConnection(self.ip_address, port=self.port)
+        conn = http.client.HTTPConnection(self.host, port=self.port)
         req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
         logging.debug("Request device to show key on screen.")
         conn.request(
@@ -122,7 +122,7 @@ class LgRemote:
         pair_cmd_xml_string = self._xml_version_string \
             + '<auth><type>AuthReq</type><value>' \
             + self._pairing_key + "</value></auth>"
-        conn = http.client.HTTPConnection(self.ip_address, port=self.port)
+        conn = http.client.HTTPConnection(self.host, port=self.port)
         conn.request(
             'POST',
             "/{}/api/auth".format(self._protocol),
@@ -159,7 +159,7 @@ class LgRemote:
             + "</session><type>HandleKeyInput</type><value>" \
             + cmdcode \
             + "</value></command>"
-        conn = http.client.HTTPConnection(self.ip_address, port=self.port)
+        conn = http.client.HTTPConnection(self.host, port=self.port)
         conn.request(
             "POST",
             command_url_for_protocol[self._protocol],
@@ -192,7 +192,9 @@ def main():  # {{{
         version='%(prog)s {version}'.format(version=__version__)
     )
     args.add_argument(
-        'ip_address',
+        '-H',
+        '--host',
+        default='scan',
         help=u"IP address or FQDN of device."
         + " Use the special value \"scan\" for a mulicast request for TVs in your LAN."
     )
@@ -229,10 +231,10 @@ def main():  # {{{
         # level=logging.INFO,
     )
 
-    logging.debug(None if user_parms.ip_address == 'scan' else user_parms.ip_address)
+    logging.debug(None if user_parms.host == 'scan' else user_parms.host)
     try:
         lg_remote = LgRemote(
-            ip_address=None if user_parms.ip_address == 'scan' else user_parms.ip_address,
+            host=None if user_parms.host == 'scan' else user_parms.host,
             protocol=user_parms.protocol)
     except socket.error as error:
         raise SystemExit(error)

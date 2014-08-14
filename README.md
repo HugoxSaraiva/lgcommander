@@ -10,21 +10,18 @@ A PC, with Python 3.x installed, connected to the same network as your Lg TV.
 
 ## Usage
 
-See the available options with: `./lgcommander.py --help`
+See the available options with: `./lgcommander.py --help` or `python3 lgcommander.py --help`
 
-    usage: lgcommander.py [-h] [-V] [-p PORT] [-P {roap,hdcp}] [-k PAIRING_KEY]
-                          [-c COMMAND]
-                          ip_address
+    usage: lgcommander.py [-h] [-V] [-H HOST] [-p PORT] [-P {roap,hdcp}]
+                          [-k PAIRING_KEY] [-c COMMAND]
 
     Control your Smart Lg TV with your PC
-
-    positional arguments:
-      ip_address            IP address or FQDN of device. Use the special value
-                            "scan" for a mulicast request for TVs in your LAN.
 
     optional arguments:
       -h, --help            show this help message and exit
       -V, --version         show program's version number and exit
+      -H HOST, --host HOST  IP address or FQDN of device. Use the special value
+                            "scan" for a mulicast request for TVs in your LAN.
       -p PORT, --port PORT  TCP port (default is 8080)
       -P {roap,hdcp}, --protocol {roap,hdcp}
                             Protocol to use. Currently ROSP and HDCP are

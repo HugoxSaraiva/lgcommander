@@ -54,11 +54,11 @@ class LgRemote:
         self._headers = {"Content-Type": "application/atom+xml"}
 
     def getip(self):
-        strngtoXmit =   'M-SEARCH * HTTP/1.1' + '\r\n' + \
-                        'HOST: 239.255.255.250:1900'  + '\r\n' + \
-                        'MAN: "ssdp:discover"'  + '\r\n' + \
-                        'MX: 2'  + '\r\n' + \
-                        'ST: urn:schemas-upnp-org:device:MediaRenderer:1'  + \
+        strngtoXmit = 'M-SEARCH * HTTP/1.1' + '\r\n' + \
+            'HOST: 239.255.255.250:1900' + '\r\n' + \
+            'MAN: "ssdp:discover"' + '\r\n' + \
+            'MX: 2' + '\r\n' + \
+            'ST: urn:schemas-upnp-org:device:MediaRenderer:1' + \
             '\r\n' + '\r\n'
 
         bytestoXmit = strngtoXmit.encode()
@@ -94,7 +94,7 @@ class LgRemote:
             "POST",
             "/{}/api/auth".format(self._protocol),
             req_key_xml_string,
-            headers=headers)
+            headers=self._headers)
         http_response = conn.getresponse()
         if http_response.reason != "OK":
             raise Exception("Network error: {}".format(http_response.reason))
@@ -109,7 +109,7 @@ class LgRemote:
             'POST',
             "/{}/api/auth".format(self._protocol),
             pair_cmd_xml_string,
-            headers=headers)
+            headers=self._headers)
         http_response = conn.getresponse()
         if http_response.reason != "OK":
             return None
@@ -133,7 +133,7 @@ class LgRemote:
             "POST",
             command_url_for_protocol[self._protocol],
             key_input_xml_string,
-            headers=headers)
+            headers=self._headers)
         return conn.getresponse()
 
 def getPairingKey(lg_remote):
@@ -172,7 +172,7 @@ def main():  # {{{
         '--protocol',
         choices=['roap', 'hdcp'],
         default='hdcp',
-        help="Protocol to use." \
+        help="Protocol to use."
         + " Currently ROSP and HDCP are supported. Default is HDCP.",
     )
     args.add_argument(
@@ -206,7 +206,6 @@ def main():  # {{{
         sys.exit("Could not get Session Id: " + theSessionid)
 
     lgtv["session"] = theSessionid
-
     dialogMsg = ""
     for lgkey in lgtv:
         dialogMsg += lgkey + ": " + lgtv[lgkey] + "\n"
@@ -236,7 +235,7 @@ def main():  # {{{
         lg_remote.handleCommand(result)
 
 if __name__ == '__main__':
-    from argparse import ArgumentError, ArgumentParser
+    from argparse import ArgumentParser
 
     main()
 # }}}

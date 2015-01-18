@@ -4,7 +4,7 @@
 # Todo:
 # Use the same TCP connection.
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 import re
 import logging
@@ -20,14 +20,14 @@ class MyDialog:
         self.user_string = None
 
         top = self.top = Toplevel(parent)
-        Label(top, text=dialog_msg, justify="left").pack()
+        Label(top, text=dialog_msg, justify='left').pack()
         self.e = Entry(top)
         self.e.pack(padx=5)
         self.e.focus_set()
-        b = Button(top, text="Ok", command=self.ok)
+        b = Button(top, text='Ok', command=self.ok)
         b.pack(pady=5)
-        top.bind("<Return>", self.ok)
-        top.title("Lg Commander")
+        top.bind('<Return>', self.ok)
+        top.title(u"Lg Commander")
         top.geometry("410x280+10+10")
 
     def ok(self, dummy=None):
@@ -40,7 +40,7 @@ class KeyInputError(Exception):
 class LgRemote:
 
     _xml_version_string = '<?xml version="1.0" encoding="utf-8"?>'
-    _headers = {"Content-Type": "application/atom+xml"}
+    _headers = {'Content-Type': 'application/atom+xml'}
     _highest_key_input_for_protocol = {
         'hdcp': 255,
         'roap': 1024,
@@ -108,15 +108,15 @@ class LgRemote:
             i += 1
         sock.close()
         if not found:
-            raise socket.error("Lg TV not found.")
-        logging.info(u"Using device: {} {}/tcp".format(self.host, self.port))
+            raise socket.error(u"Lg TV not found.")
+        logging.info(u"Using device: {} over transport protocol: {}/tcp".format(self.host, self.port))
         return self.host
 
     def auto_detect_accepted_protocol(self):
         req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
-        logging.debug("Detecting accepted protocol.")
+        logging.debug(u"Detecting accepted protocol.")
         for protocol in self._highest_key_input_for_protocol:
-            logging.debug("Testing protocol: %s", protocol)
+            logging.debug(u"Testing protocol: {}".format(protocol))
             conn = http.client.HTTPConnection(self.host, port=self.port)
             conn.request(
                 "POST",
@@ -124,26 +124,26 @@ class LgRemote:
                 req_key_xml_string,
                 headers=self._headers)
             http_response = conn.getresponse()
-            logging.debug("Got response: %s", http_response.reason)
+            logging.debug(u"Got response: {}".format(http_response.reason))
             if http_response.reason == 'OK':
                 self._protocol = protocol
-                logging.debug("Using protocol: %s", self._protocol)
+                logging.debug(u"Using protocol: {}".format(self._protocol))
                 return self._protocol
-        raise Exception("No accepted protocol found.")
+        raise Exception(u"No accepted protocol found.")
 
     def display_key_on_screen(self):
         conn = http.client.HTTPConnection(self.host, port=self.port)
         req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
-        logging.debug("Request device to show key on screen.")
+        logging.debug(u"Request device to show key on screen.")
         conn.request(
-            "POST",
-            "/{}/api/auth".format(self._protocol),
+            'POST',
+            '/{}/api/auth'.format(self._protocol),
             req_key_xml_string,
             headers=self._headers)
         http_response = conn.getresponse()
-        logging.debug("Device response was: %s", http_response.reason)
+        logging.debug(u"Device response was: {}".format(http_response.reason))
         if http_response.reason != "OK":
-            raise Exception("Network error: {}".format(http_response.reason))
+            raise Exception(u"Network error: {}".format(http_response.reason))
         return http_response.reason
 
     def get_session_id(self, paring_key):
@@ -151,50 +151,50 @@ class LgRemote:
             return None
 
         self._pairing_key = paring_key
-        logging.debug('Trying paring key: %s', self._pairing_key)
+        logging.debug(u"Trying paring key: {}".format(self._pairing_key))
         pair_cmd_xml_string = self._xml_version_string \
             + '<auth><type>AuthReq</type><value>' \
-            + self._pairing_key + "</value></auth>"
+            + self._pairing_key + '</value></auth>'
         conn = http.client.HTTPConnection(self.host, port=self.port)
         conn.request(
             'POST',
-            "/{}/api/auth".format(self._protocol),
+            '/{}/api/auth'.format(self._protocol),
             pair_cmd_xml_string,
             headers=self._headers)
         http_response = conn.getresponse()
-        if http_response.reason != "OK":
+        if http_response.reason != 'OK':
             return None
         tree = etree.XML(http_response.read())
         self._session_id = tree.find('session').text
-        logging.debug('Session ID is %s', self._session_id)
+        logging.debug(u"Session ID is {}".format(self._session_id))
         if len(self._session_id) < 8:
-            raise Exception("Could not get Session Id: " + self._session_id)
+            raise Exception(u"Could not get Session Id: {}".format(self._session_id))
         return self._session_id
 
     def handle_key_input(self, cmdcode):
         highest_key_input = self._highest_key_input_for_protocol[self._protocol]
         try:
             if 0 > int(cmdcode) or int(cmdcode) > highest_key_input:
-                raise KeyInputError('Key input {} is not supported.'.format(cmdcode))
+                raise KeyInputError(u"Key input {} is not supported.".format(cmdcode))
         except ValueError:
-            raise KeyInputError('Key input {} is not a number'.format(cmdcode))
+            raise KeyInputError(u"Key input {} is not a number".format(cmdcode))
         if not self._session_id:
-            raise Exception("No valid session key available.")
+            raise Exception(u"No valid session key available.")
 
         command_url_for_protocol = {
             'hdcp': '/{}/api/dtv_wifirc'.format(self._protocol),
             'roap': '/{}/api/command'.format(self._protocol),
         }
 
-        logging.debug('Executing command: %s', cmdcode)
+        logging.debug(u"Executing command: {}".format(cmdcode))
         key_input_xml_string = self._xml_version_string + '<command><session>' \
             + self._session_id \
-            + "</session><type>HandleKeyInput</type><value>" \
+            + '</session><type>HandleKeyInput</type><value>' \
             + cmdcode \
-            + "</value></command>"
+            + '</value></command>'
         conn = http.client.HTTPConnection(self.host, port=self.port)
         conn.request(
-            "POST",
+            'POST',
             command_url_for_protocol[self._protocol],
             key_input_xml_string,
             headers=self._headers)
@@ -207,7 +207,7 @@ def main():  # {{{
         lg_remote.display_key_on_screen()
         root = Tk()
         root.withdraw()
-        dialog_msg = "Please enter the pairing key\nyou see on your TV screen\n"
+        dialog_msg = u"Please enter the pairing key\nyou see on your TV screen\n"
         dialog = MyDialog(root, dialog_msg)
         root.wait_window(dialog.top)
         session_id = dialog.user_string
@@ -215,7 +215,7 @@ def main():  # {{{
         return session_id
 
     args = ArgumentParser(
-        description="Control your Smart Lg TV with your PC",
+        description=u"Control your Smart Lg TV with your PC",
     )
     args.add_argument(
         '-V',
@@ -228,8 +228,8 @@ def main():  # {{{
         '--host',
         default='scan',
         help=u"IP address or FQDN of device."
-        + " Use the special value \"scan\" for a multicast request for TVs in your LAN."
-        + " \"scan\" will also be used if this parameter was omitted."
+        + u" Use the special value \"scan\" for a multicast request for TVs in your LAN."
+        + u" \"scan\" will also be used if this parameter was omitted."
     )
     args.add_argument(
         '-p',
@@ -242,26 +242,26 @@ def main():  # {{{
         '--protocol',
         choices=['roap', 'hdcp'],
         default=None,
-        help="Protocol to use."
-        + " Currently ROAP and HDCP are supported."
-        + " Default is to auto detect the correct one.",
+        help=u"Protocol to use."
+        + u" Currently ROAP and HDCP are supported."
+        + u" Default is to auto detect the correct one.",
     )
     args.add_argument(
         '-k',
         '--pairing-key',
-        help="Pairing key of your TV."
-        + " This key is shown on request on the screen"
-        + " and does only change if you factory reset your TV."
+        help=u"Pairing key of your TV."
+        + u" This key is shown on request on the screen"
+        + u" and does only change if you factory reset your TV."
     )
     args.add_argument(
         '-c',
         '--command',
-        help="Send just a single command and exit."
+        help=u"Send just a single command and exit."
     )
     user_parms = args.parse_args()
 
     logging.basicConfig(
-        format='# %(levelname)s: %(message)s',
+        format=u'# %(levelname)s: %(message)s',
         level=logging.DEBUG,
         # level=logging.INFO,
     )
@@ -275,25 +275,25 @@ def main():  # {{{
         raise SystemExit(error)
 
     if user_parms.pairing_key:
-        logging.debug("Pairing key from user %s", user_parms.pairing_key)
+        logging.debug(u"Pairing key from user {}".format(user_parms.pairing_key))
         lg_remote.get_session_id(user_parms.pairing_key)
     while not lg_remote._session_id:
-        logging.debug("No valid pairing key from user. Asking user …")
+        logging.debug(u"No valid pairing key from user. Asking user …")
         lg_remote.get_session_id(get_pairing_key_from_user(lg_remote))
 
-    dialog_msg = "Session ID: " + str(lg_remote._session_id) + "\n"
-    dialog_msg += "Paring key: " + str(lg_remote._pairing_key) + "\n"
-    dialog_msg += "Success in establishing command session\n"
-    dialog_msg += "=" * 28 + "\n"
-    dialog_msg += "Enter command code i.e. a number between 0 and 255\n"
-    dialog_msg += "Enter a number greater than 255 to quit.\n"
-    dialog_msg += "Some useful codes:\n"
-    dialog_msg += "for EZ_ADJUST     menu enter   255 \n"
-    dialog_msg += "for IN START        menu enter   251 \n"
-    dialog_msg += "for Installation     menu enter   207 \n"
-    dialog_msg += "for POWER_ONLY mode enter   254 \n"
-    dialog_msg += "Warning: do not enter 254 if you \n"
-    dialog_msg += "do not know what POWER_ONLY mode is. "
+    dialog_msg = u"Session ID: " + str(lg_remote._session_id) + "\n"
+    dialog_msg += u"Paring key: " + str(lg_remote._pairing_key) + "\n"
+    dialog_msg += u"Success in establishing command session\n"
+    dialog_msg += u"=" * 28 + "\n"
+    dialog_msg += u"Enter command code i.e. a number between 0 and 255\n"
+    dialog_msg += u"Enter a number greater than 255 to quit.\n"
+    dialog_msg += u"Some useful codes:\n"
+    dialog_msg += u"for EZ_ADJUST     menu enter   255 \n"
+    dialog_msg += u"for IN START        menu enter   251 \n"
+    dialog_msg += u"for Installation     menu enter   207 \n"
+    dialog_msg += u"for POWER_ONLY mode enter   254 \n"
+    dialog_msg += u"Warning: do not enter 254 if you \n"
+    dialog_msg += u"do not know what POWER_ONLY mode is. "
 
     if user_parms.command:
         lg_remote.handle_key_input(user_parms.command)
@@ -307,7 +307,7 @@ def main():  # {{{
         try:
             lg_remote.handle_key_input(dialog.user_string)
         except KeyInputError:
-            logging.debug("Terminate on user requested.")
+            logging.debug(u"Terminate on user requested.")
             break
 
 if __name__ == '__main__':

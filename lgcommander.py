@@ -12,7 +12,7 @@ import socket
 
 import xml.etree.ElementTree as etree
 import http.client
-from tkinter import *
+from tkinter import Tk, Toplevel, Entry, Button, Label
 
 class MyDialog:
 
@@ -201,7 +201,6 @@ def main():  # {{{
         session_id = dialog.user_string
         dialog.top.destroy()
         return session_id
-
 
     args = ArgumentParser(
         description="Control your Smart Lg TV with your PC",

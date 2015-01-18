@@ -54,6 +54,14 @@ class LgRemote:
     ):
 
         self.port = port
+        try:
+            port = int(self.port)
+        except ValueError:
+            # if not self.port == 'reported':
+            raise Exception(u"Port is not a number: {}".format(self.port))
+        else:
+            self.port = port
+
         self.host = host
         if not self.host:
             self.getip()
@@ -88,8 +96,12 @@ class LgRemote:
                 i += 1
                 sock.sendto(bytestoXmit, ('239.255.255.250', 1900))
             if re.search('LG', gotstr):
-                logging.debug("Found device: %s", addressport)
-                self.host, _ = addressport
+                logging.debug(u"Returned: {}".format(gotstr))
+                self.host, port = addressport
+                logging.debug(u"Found device: {}".format(self.host))
+                # (SSDP source port {}/udp)
+                # Who cares …
+
                 found = True
             else:
                 gotstr = 'notyet'
@@ -97,7 +109,7 @@ class LgRemote:
         sock.close()
         if not found:
             raise socket.error("Lg TV not found.")
-        logging.info("Using device: %s", self.host)
+        logging.info(u"Using device: {} {}/tcp".format(self.host, self.port))
         return self.host
 
     def auto_detect_accepted_protocol(self):

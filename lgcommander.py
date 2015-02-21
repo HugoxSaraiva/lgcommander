@@ -115,6 +115,8 @@ class LgRemote:
     def auto_detect_accepted_protocol(self):
         req_key_xml_string = self._xml_version_string + '<auth><type>AuthKeyReq</type></auth>'
         logging.debug(u"Detecting accepted protocol.")
+        if self._doesServiceExist(3000):
+            raise Exception(u"Protocol not supported. See https://github.com/ypid/lgcommander/issues/1")
         for protocol in self._highest_key_input_for_protocol:
             logging.debug(u"Testing protocol: {}".format(protocol))
             conn = http.client.HTTPConnection(self.host, port=self.port)
@@ -199,6 +201,36 @@ class LgRemote:
             key_input_xml_string,
             headers=self._headers)
         return conn.getresponse()
+
+    def _doesServiceExist(self, port):
+        """
+        http://stackoverflow.com/a/14118271
+        """
+
+        # captive_dns_addr = None
+        # host_addr = None
+
+        # try:
+        #     captive_dns_addr = socket.gethostbyname(self.host)
+        # except:
+        #     pass
+
+        try:
+            logging.debug(u"Trying to connect to port {}/tcp".format(port))
+
+            # host_addr = socket.gethostbyname(self.host)
+            # if (captive_dns_addr == host_addr):
+            #     return False
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect((self.host, port))
+            s.close()
+        except:
+            return False
+
+        return True
+
 
 def main():  # {{{
     """Execute module in command line mode."""

@@ -6,7 +6,7 @@ The documentation is based on network traces from the model `lg-50LB6500`_.
 
 .. _lg-50LB6500: http://www.lg.com/cl/soporte-producto/lg-50LB6500
 
-The protocol is asynchron (meaning that the client can send multible requests and the TV can answers to them in a changed order or in one websocket packet).
+The protocol is asynchron (meaning that the client can send multible requests and the TV can answer to them in a different order or in one websocket packet).
 
 * The client initiates a web socket connection to Port 3000/tcp (using Sec-WebSocket-Version: 13).
 

@@ -12,29 +12,35 @@ A PC, with Python 3.x installed, connected to the same network as your Lg TV.
 
 See the available options with: `./lgcommander.py --help` or `python3 lgcommander.py --help`
 
-    usage: lgcommander.py [-h] [-V] [-H HOST] [-p PORT] [-P {roap,hdcp}]
-                          [-k PAIRING_KEY] [-c COMMAND]
+    usage: lgcommander.py [-h] [-c COMMAND] [-H HOST] [-p PORT] [-k KEY]
+                      [-P {roap,hdcp}] [--debug]
 
-    Control your Smart Lg TV with your PC
-
+    Control LG-TV over wifi.
+    
     optional arguments:
       -h, --help            show this help message and exit
-      -V, --version         show program's version number and exit
-      -H HOST, --host HOST  IP address or FQDN of device. Use the special value
-                            "scan" for a multicast request for TVs in your LAN.
-                            "scan" will also be used if this parameter was
-                            omitted.
+      -c COMMAND, --command COMMAND
+                            Command to send to TV
+      -H HOST, --host HOST  IP address of device. If not set a multicast request
+                            will be made for TVs in your LAN.
       -p PORT, --port PORT  TCP port (default is 8080).
+      -k KEY, --key KEY     Pairing key used to connect to TV. Pairing key will be
+                            displayed on TV if not provided
       -P {roap,hdcp}, --protocol {roap,hdcp}
                             Protocol to use. Currently ROAP and HDCP are
                             supported. Default is to auto detect the correct one.
-      -k PAIRING_KEY, --pairing-key PAIRING_KEY
-                            Pairing key of your TV. This key is shown on request
-                            on the screen and does only change if you factory
-                            reset your TV.
-      -c COMMAND, --command COMMAND
-                            Send just a single command and exit.
+      --debug               print debug messages
 
+## Examples:
+Show pairing key on TV
+
+    python3 lgcommander.py
+Send command 1 to TV with pairing key 999999
+
+    python3 lgcommander.py -k 999999 -c 1
+Send command 1 to TV with pairing key 999999 and roap protocol without displaying pairing key on screen
+
+    python3 lgcommander.py -k 999999 -c 1 -P roap
 ## Some useful codes:
 
 * for EZ_ADJUST menu enter 255
